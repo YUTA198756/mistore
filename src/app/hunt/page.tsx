@@ -48,18 +48,24 @@ export default function HuntPage() {
 
       const profileId = await getOrCreateChildProfile();
 
+      const fileName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`;
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from("mistake-images")
-        .upload(`${Date.now()}_${compressed.name}`, compressed, {
-          contentType: "image/jpeg",
+        .upload(fileName, compressed, {
+          contentType: compressed.type || "image/jpeg",
           upsert: false,
         });
 
-      if (uploadError) console.error("Upload error:", uploadError);
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        setErrorMsg(`画像の保存に失敗しました：${uploadError.message}\nもう一度やり直してね。`);
+        setStep("error");
+        return;
+      }
 
-      const imageUrl = uploadData
-        ? supabase.storage.from("mistake-images").getPublicUrl(uploadData.path).data.publicUrl
-        : "";
+      const imageUrl = supabase.storage
+        .from("mistake-images")
+        .getPublicUrl(uploadData.path).data.publicUrl;
 
       await supabase.from("mistakes").insert({
         user_id: profileId,

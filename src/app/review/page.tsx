@@ -62,16 +62,24 @@ export default function ReviewPage() {
     setSaving(true);
 
     const compressed = await compressImage(reworkFile);
-    const { data: uploadData } = await supabase.storage
+    const fileName = `rework_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`;
+    const { data: uploadData, error: uploadError } = await supabase.storage
       .from("mistake-images")
-      .upload(`rework_${Date.now()}_${compressed.name}`, compressed, {
-        contentType: "image/jpeg",
+      .upload(fileName, compressed, {
+        contentType: compressed.type || "image/jpeg",
         upsert: false,
       });
 
-    const reworkUrl = uploadData
-      ? supabase.storage.from("mistake-images").getPublicUrl(uploadData.path).data.publicUrl
-      : "";
+    if (uploadError) {
+      console.error("Rework upload error:", uploadError);
+      alert(`画像の保存に失敗しました：${uploadError.message}`);
+      setSaving(false);
+      return;
+    }
+
+    const reworkUrl = supabase.storage
+      .from("mistake-images")
+      .getPublicUrl(uploadData.path).data.publicUrl;
 
     const hasReason = reflection.trim().length > 0;
     const additionalXp = XP_RESOLVE + (hasReason ? XP_REASON_BONUS : 0);
