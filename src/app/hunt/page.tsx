@@ -130,7 +130,7 @@ export default function HuntPage() {
 
       {step === "scoring" && (
         <div className="card text-center py-12">
-          <div className="text-5xl mb-6 float">🤖</div>
+          <div className="text-5xl mb-6 float">🐶</div>
           <p className="font-bold text-base mb-2 text-cyan">ポンちゃんが採点中…</p>
           <p className="text-sm text-muted flash">文字のていねいさをチェック中</p>
         </div>

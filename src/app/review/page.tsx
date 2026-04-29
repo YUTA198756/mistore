@@ -1,20 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { supabase, Mistake } from "@/lib/supabase";
 import { getOrCreateChildProfile, addXp } from "@/lib/profile";
+import { compressImage } from "@/lib/imageCompress";
 
 const XP_RESOLVE = 10;
 const XP_REASON_BONUS = 20;
 
-type ViewState = "list" | "detail" | "done";
-
-interface DetailState {
-  mistake: Mistake;
-  reflection: string;
-  saving: boolean;
-}
+type ViewState = "list" | "detail" | "reason" | "done";
 
 interface DoneState {
   xpEarned: number;
@@ -24,11 +19,23 @@ interface DoneState {
 export default function ReviewPage() {
   const [mistakes, setMistakes] = useState<Mistake[]>([]);
   const [loading, setLoading] = useState(true);
-  const [detail, setDetail] = useState<DetailState | null>(null);
   const [view, setView] = useState<ViewState>("list");
+  const [currentMistake, setCurrentMistake] = useState<Mistake | null>(null);
+  const [reworkFile, setReworkFile] = useState<File | null>(null);
+  const [reworkPreview, setReworkPreview] = useState<string | null>(null);
+  const [reflection, setReflection] = useState("");
+  const [saving, setSaving] = useState(false);
   const [doneState, setDoneState] = useState<DoneState | null>(null);
+  const [profileId, setProfileId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { fetchMistakes(); }, []);
+  useEffect(() => {
+    (async () => {
+      const id = await getOrCreateChildProfile();
+      setProfileId(id);
+      fetchMistakes();
+    })();
+  }, []);
 
   async function fetchMistakes() {
     setLoading(true);
@@ -40,32 +47,65 @@ export default function ReviewPage() {
   }
 
   function openDetail(m: Mistake) {
-    setDetail({ mistake: m, reflection: "", saving: false });
+    setCurrentMistake(m);
+    setReworkFile(null);
+    setReworkPreview(null);
     setView("detail");
   }
 
-  async function markResolved() {
-    if (!detail) return;
-    setDetail((d) => d && { ...d, saving: true });
+  function handleReworkCapture(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setReworkFile(file);
+    setReworkPreview(URL.createObjectURL(file));
+  }
 
-    const hasReason = detail.reflection.trim().length > 0;
-    const xp = XP_RESOLVE + (hasReason ? XP_REASON_BONUS : 0);
+  async function submitRework() {
+    if (!reworkFile || !currentMistake || !profileId) return;
+    setSaving(true);
+
+    const compressed = await compressImage(reworkFile);
+    const { data: uploadData } = await supabase.storage
+      .from("mistake-images")
+      .upload(`rework_${Date.now()}_${compressed.name}`, compressed, {
+        contentType: "image/jpeg",
+        upsert: false,
+      });
+
+    const reworkUrl = uploadData
+      ? supabase.storage.from("mistake-images").getPublicUrl(uploadData.path).data.publicUrl
+      : "";
 
     await supabase.from("mistakes").update({
       status: "resolved",
-      reflection_text: detail.reflection || null,
-      xp_earned: (detail.mistake.xp_earned ?? 0) + xp,
-    }).eq("id", detail.mistake.id);
+      rework_image_url: reworkUrl || null,
+      xp_earned: (currentMistake.xp_earned ?? 0) + XP_RESOLVE,
+    }).eq("id", currentMistake.id);
 
-    const profileId = await getOrCreateChildProfile();
-    let ticketsEarned = 0;
-    if (profileId) {
-      const r = await addXp(profileId, xp);
-      ticketsEarned = r.ticketsEarned;
-    }
+    const r = await addXp(profileId, XP_RESOLVE);
+    setDoneState({ xpEarned: XP_RESOLVE, ticketsEarned: r.ticketsEarned });
+    setMistakes((prev) => prev.filter((m) => m.id !== currentMistake.id));
+    setReflection("");
+    setSaving(false);
+    setView("reason");
+  }
 
-    setMistakes((prev) => prev.filter((m) => m.id !== detail.mistake.id));
-    setDoneState({ xpEarned: xp, ticketsEarned });
+  async function submitReason() {
+    if (!currentMistake || !profileId) return;
+    if (!reflection.trim()) { setView("done"); return; }
+    setSaving(true);
+
+    await supabase.from("mistakes").update({
+      reflection_text: reflection.trim(),
+      xp_earned: (currentMistake.xp_earned ?? 0) + XP_RESOLVE + XP_REASON_BONUS,
+    }).eq("id", currentMistake.id);
+
+    const r = await addXp(profileId, XP_REASON_BONUS);
+    setDoneState((prev) => prev
+      ? { xpEarned: prev.xpEarned + XP_REASON_BONUS, ticketsEarned: prev.ticketsEarned + r.ticketsEarned }
+      : { xpEarned: XP_REASON_BONUS, ticketsEarned: r.ticketsEarned }
+    );
+    setSaving(false);
     setView("done");
   }
 
@@ -79,13 +119,17 @@ export default function ReviewPage() {
 
       <div className="flex items-center gap-3 mb-1">
         <button
-          onClick={() => view === "list" ? undefined : (setView("list"), setDetail(null))}
+          onClick={() => {
+            if (view === "list") return;
+            if (view === "detail") { setView("list"); setCurrentMistake(null); }
+            if (view === "reason") setView("detail");
+          }}
           className="ghost-btn"
           style={{ width: "auto", padding: "8px 14px" }}
         >
           {view === "list"
             ? <a href="/">← もどる</a>
-            : "← 一覧"
+            : "← もどる"
           }
         </button>
         <h1 className="font-dot text-lg text-gold">🔄 とき直し</h1>
@@ -116,11 +160,7 @@ export default function ReviewPage() {
                 <span className="badge badge-a">{mistakes.length}問</span>
               </div>
               {mistakes.map((m) => (
-                <button
-                  key={m.id}
-                  onClick={() => openDetail(m)}
-                  className="nav-btn"
-                >
+                <button key={m.id} onClick={() => openDetail(m)} className="nav-btn">
                   {m.image_url ? (
                     <div className="relative shrink-0 rounded-xl overflow-hidden"
                       style={{ width: 52, height: 52 }}>
@@ -152,15 +192,79 @@ export default function ReviewPage() {
         </>
       )}
 
-      {/* 詳細 */}
-      {view === "detail" && detail && (
+      {/* 詳細：解き直し写真を撮る */}
+      {view === "detail" && currentMistake && (
         <>
           <div className="card">
-            <p className="text-xs text-muted mb-3">{formatDate(detail.mistake.created_at)} の問題</p>
-            {detail.mistake.image_url && (
-              <div className="relative w-full rounded-2xl overflow-hidden mb-3" style={{ aspectRatio: "3/4" }}>
-                <Image src={detail.mistake.image_url} alt="問題" fill className="object-cover" />
+            <p className="text-xs text-muted mb-2">{formatDate(currentMistake.created_at)} の問題</p>
+            {currentMistake.image_url && (
+              <div className="relative w-full rounded-2xl overflow-hidden mb-2" style={{ aspectRatio: "3/4" }}>
+                <Image src={currentMistake.image_url} alt="元の問題" fill className="object-cover" />
               </div>
+            )}
+            <p className="text-xs text-center text-muted">↑ 元の問題</p>
+          </div>
+
+          <div className="card">
+            <p className="font-bold text-sm mb-1">📸 解き直した答えを撮影しよう</p>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="badge badge-b text-xs">＋{XP_RESOLVE} XP</span>
+              <span className="text-xs text-muted">写真を撮ると獲得！</span>
+            </div>
+
+            {reworkPreview ? (
+              <div className="flex flex-col gap-3">
+                <div className="relative w-full rounded-2xl overflow-hidden" style={{ aspectRatio: "3/4" }}>
+                  <Image src={reworkPreview} alt="解き直し" fill className="object-cover" />
+                </div>
+                <button
+                  onClick={() => { setReworkFile(null); setReworkPreview(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+                  className="ghost-btn text-xs"
+                >
+                  📷 撮り直す
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="action-btn"
+              >
+                📷 カメラで撮影
+              </button>
+            )}
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={handleReworkCapture}
+            />
+          </div>
+
+          <button
+            onClick={submitRework}
+            disabled={!reworkFile || saving}
+            className="action-btn"
+            style={{ opacity: reworkFile ? 1 : 0.4 }}
+          >
+            {saving ? "保存中…" : `✅ 解き直し完了！（＋${XP_RESOLVE} XP）`}
+          </button>
+        </>
+      )}
+
+      {/* 理由入力 */}
+      {view === "reason" && (
+        <>
+          <div className="card card-green text-center py-6">
+            <div className="text-4xl mb-2">🎉</div>
+            <p className="font-dot text-lg font-bold text-green mb-1">解き直し完了！</p>
+            <p className="font-dot text-2xl font-bold text-gold">＋{XP_RESOLVE} XP</p>
+            {doneState && doneState.ticketsEarned > 0 && (
+              <p className="font-dot text-sm pulse-gold mt-2" style={{ color: "var(--purple)" }}>
+                🎰 ガチャチケット ×{doneState.ticketsEarned} 獲得！
+              </p>
             )}
           </div>
 
@@ -168,43 +272,39 @@ export default function ReviewPage() {
             <p className="font-bold text-sm mb-1">✏️ なぜ間違えた？</p>
             <div className="flex items-center gap-2 mb-3">
               <span className="badge badge-s text-xs">＋{XP_REASON_BONUS} XP ボーナス</span>
-              <span className="text-xs text-muted">入力すると獲得！</span>
+              <span className="text-xs text-muted">書くと追加獲得！</span>
             </div>
             <textarea
-              value={detail.reflection}
-              onChange={(e) => setDetail((d) => d && { ...d, reflection: e.target.value })}
+              value={reflection}
+              onChange={(e) => setReflection(e.target.value)}
               placeholder="例：計算ミス、公式を忘れた"
               rows={3}
               className="field resize-none"
             />
           </div>
 
-          <button
-            onClick={markResolved}
-            disabled={detail.saving}
-            className="action-btn"
-          >
-            {detail.saving
-              ? "保存中…"
-              : `✅ 解き直し完了！（＋${XP_RESOLVE + (detail.reflection.trim() ? XP_REASON_BONUS : 0)} XP）`}
+          <button onClick={submitReason} disabled={saving} className="action-btn">
+            {saving ? "保存中…" : reflection.trim()
+              ? `📢 ＋${XP_REASON_BONUS} XP もらう！`
+              : "スキップしてホームへ"}
           </button>
         </>
       )}
 
       {/* 完了 */}
       {view === "done" && doneState && (
-        <div className="card card-green text-center py-10">
-          <div className="text-5xl mb-4 float">🎉</div>
-          <p className="font-dot text-xl font-bold text-green mb-2">解き直し完了！</p>
+        <div className="card card-gold text-center py-10">
+          <div className="text-5xl mb-4 float">🏆</div>
+          <p className="font-dot text-xl font-bold text-gold mb-2">ぜんぶ完了！</p>
           <p className="text-4xl font-dot font-bold text-gold mb-2">＋{doneState.xpEarned} XP</p>
           {doneState.ticketsEarned > 0 && (
             <p className="font-dot text-base pulse-gold mb-4" style={{ color: "var(--purple)" }}>
               🎰 ガチャチケット ×{doneState.ticketsEarned} 獲得！
             </p>
           )}
-          <p className="text-sm text-muted mb-6">まちがいを乗り越えた！<br />経験値が上がったぞ！</p>
+          <p className="text-sm text-muted mb-6">まちがいを宝に変えた！<br />経験値が上がったぞ！</p>
           <div className="flex flex-col gap-3">
-            <button onClick={() => setView("list")} className="action-btn">
+            <button onClick={() => { setView("list"); setCurrentMistake(null); setDoneState(null); }} className="action-btn">
               次の問題へ
             </button>
             <a href="/" className="ghost-btn">🏠 ホームにもどる</a>

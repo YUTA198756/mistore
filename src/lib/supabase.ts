@@ -19,6 +19,7 @@ export interface Mistake {
   handwriting_score: number | null;
   is_super_gacha: boolean;
   reflection_text: string | null;
+  rework_image_url: string | null;
   xp_earned: number;
   created_at: string;
 }
