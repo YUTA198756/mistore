@@ -1,6 +1,7 @@
 import Link from "next/link";
 import GachaButton from "@/components/GachaButton";
 import XpStatus from "@/components/XpStatus";
+import PendingAlert from "@/components/PendingAlert";
 
 export default function Home() {
   return (
@@ -13,6 +14,9 @@ export default function Home() {
         <p className="text-base text-muted mb-1">ミス・トレ</p>
         <p className="text-sm text-muted">まちがいをお宝に変えよう！</p>
       </div>
+
+      {/* 承認依頼アラート */}
+      <PendingAlert />
 
       {/* ステータス */}
       <XpStatus />
@@ -35,7 +39,7 @@ export default function Home() {
         <Link href="/review" className="nav-btn">
           <span className="nav-icon">🔄</span>
           <div>
-            <div>とき直し</div>
+            <div>解き直し</div>
             <div className="text-xs text-muted font-normal">解き直して ＋10〜30XP</div>
           </div>
           <span className="nav-arrow">›</span>
@@ -76,7 +80,7 @@ export default function Home() {
             <span className="text-cyan font-bold">＋10 XP</span>
           </div>
           <div className="flex justify-between">
-            <span>🔄 とき直し</span>
+            <span>🔄 解き直し</span>
             <span className="text-cyan font-bold">＋10 XP</span>
           </div>
           <div className="flex justify-between">

@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
           contents: [
             { type: "text", text: "📋 きょうのミッション", weight: "bold", color: "#15803d", size: "sm" },
             { type: "text", text: "✏️  まちがい問題を 1まい さつえい", size: "sm", color: "#166534", margin: "sm" },
-            { type: "text", text: "🔄  1問 とき直す", size: "sm", color: "#166534", margin: "xs" },
+            { type: "text", text: "🔄  1問 解き直す", size: "sm", color: "#166534", margin: "xs" },
             {
               type: "text",
               text: "クリアすると ごほうびガチャが ひけるよ！🎰",

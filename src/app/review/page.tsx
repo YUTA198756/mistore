@@ -117,7 +117,7 @@ export default function ReviewPage() {
         >
           {view === "list" ? <a href="/">← もどる</a> : "← 一覧"}
         </button>
-        <h1 className="font-dot text-lg text-gold">🔄 とき直し</h1>
+        <h1 className="font-dot text-lg text-gold">🔄 解き直し</h1>
       </div>
 
       {/* 一覧 */}

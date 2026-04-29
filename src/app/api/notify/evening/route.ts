@@ -46,8 +46,8 @@ export async function GET(req: NextRequest) {
     shotCount === 0
       ? "きょうはまだ さつえいしていないよ。\nあと少し！いっしょに がんばろう！"
       : resolvedCount === 0
-      ? `${shotCount}まい さつえいできた！\nとき直しも わすれずにね！`
-      : `さつえい ${shotCount}まい、とき直し ${resolvedCount}問！\nすばらしい！この ちょうしで いこう！`;
+      ? `${shotCount}まい さつえいできた！\n解き直しも わすれずにね！`
+      : `さつえい ${shotCount}まい、解き直し ${resolvedCount}問！\nすばらしい！この ちょうしで いこう！`;
 
   const contents = {
     type: "bubble",
@@ -85,7 +85,7 @@ export async function GET(req: NextRequest) {
               type: "box", layout: "vertical", flex: 1,
               backgroundColor: "#f0fdf4", cornerRadius: "8px", paddingAll: "10px",
               contents: [
-                { type: "text", text: "✅ とき直し", size: "xxs", color: "#14532d" },
+                { type: "text", text: "✅ 解き直し", size: "xxs", color: "#14532d" },
                 { type: "text", text: `${resolvedCount}問`, weight: "bold", size: "xl", color: "#16a34a" },
               ],
             },

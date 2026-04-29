@@ -194,7 +194,7 @@ export default function HuntPage() {
           </div>
 
           <button onClick={handleReset} className="action-btn">📸 もう1枚撮る</button>
-          <a href="/review" className="ghost-btn">🔄 とき直しへ</a>
+          <a href="/review" className="ghost-btn">🔄 解き直しへ</a>
           <a href="/" className="ghost-btn">🏠 ホームにもどる</a>
         </>
       )}
