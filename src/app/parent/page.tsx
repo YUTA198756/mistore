@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { supabase, Mistake } from "@/lib/supabase";
 import { addXp } from "@/lib/profile";
 
@@ -75,14 +74,31 @@ export default function ParentPage() {
       <button
         onClick={() => setLightbox(src)}
         className="relative w-full rounded-xl overflow-hidden"
-        style={{ aspectRatio: ratio, display: "block" }}
+        style={{ aspectRatio: ratio, display: "block", background: "rgba(0,0,0,0.4)" }}
       >
-        <Image src={src} alt={alt} fill className="object-cover" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt={alt}
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+          onError={(e) => {
+            const target = e.currentTarget as HTMLImageElement;
+            target.style.display = "none";
+            const parent = target.parentElement;
+            if (parent && !parent.querySelector(".img-error")) {
+              const errDiv = document.createElement("div");
+              errDiv.className = "img-error";
+              errDiv.style.cssText = "position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#f87171;font-size:11px;text-align:center;padding:8px;";
+              errDiv.textContent = "画像読み込みエラー";
+              parent.appendChild(errDiv);
+            }
+          }}
+        />
         <div style={{
-          position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
-          background: "rgba(0,0,0,0.15)",
+          position: "absolute", bottom: 4, right: 4,
+          background: "rgba(0,0,0,0.6)", borderRadius: 6, padding: "2px 6px",
         }}>
-          <span style={{ fontSize: 18, opacity: 0.9 }}>🔍</span>
+          <span style={{ fontSize: 12 }}>🔍</span>
         </div>
       </button>
     );
@@ -219,15 +235,19 @@ export default function ParentPage() {
           {m.image_url && (
             <button onClick={() => setLightbox(m.image_url)}
               className="relative shrink-0 rounded-xl overflow-hidden"
-              style={{ width:64, height:85 }}>
-              <Image src={m.image_url} alt="問題" fill className="object-cover" />
+              style={{ width:64, height:85, background:"rgba(0,0,0,0.4)" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={m.image_url} alt="問題"
+                style={{ width:"100%", height:"100%", objectFit:"cover" }} />
             </button>
           )}
           {m.rework_image_url && (
             <button onClick={() => setLightbox(m.rework_image_url!)}
               className="relative shrink-0 rounded-xl overflow-hidden"
-              style={{ width:64, height:85 }}>
-              <Image src={m.rework_image_url} alt="解き直し" fill className="object-cover" />
+              style={{ width:64, height:85, background:"rgba(0,0,0,0.4)" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={m.rework_image_url} alt="解き直し"
+                style={{ width:"100%", height:"100%", objectFit:"cover" }} />
             </button>
           )}
           <div className="flex-1 min-w-0 text-xs text-muted">

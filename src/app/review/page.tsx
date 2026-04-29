@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
 import { supabase, Mistake } from "@/lib/supabase";
 import { getOrCreateChildProfile } from "@/lib/profile";
 import { compressImage } from "@/lib/imageCompress";
@@ -160,8 +159,10 @@ export default function ReviewPage() {
                 <button key={m.id} onClick={() => openDetail(m)} className="nav-btn">
                   {m.image_url ? (
                     <div className="relative shrink-0 rounded-xl overflow-hidden"
-                      style={{ width: 52, height: 52 }}>
-                      <Image src={m.image_url} alt="問題" fill className="object-cover" />
+                      style={{ width: 52, height: 52, background: "rgba(0,0,0,0.4)" }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={m.image_url} alt="問題"
+                        style={{ width:"100%", height:"100%", objectFit:"cover" }} />
                     </div>
                   ) : (
                     <div className="shrink-0 flex items-center justify-center text-2xl rounded-xl"
@@ -197,8 +198,16 @@ export default function ReviewPage() {
             {currentMistake.image_url && (
               <button onClick={() => setLightbox(currentMistake.image_url)}
                 className="relative w-full rounded-2xl overflow-hidden block"
-                style={{ aspectRatio:"3/4" }}>
-                <Image src={currentMistake.image_url} alt="元の問題" fill className="object-cover" />
+                style={{ aspectRatio:"3/4", background:"rgba(0,0,0,0.4)" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={currentMistake.image_url} alt="元の問題"
+                  style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover" }} />
+                <div style={{
+                  position:"absolute", bottom:8, right:8,
+                  background:"rgba(0,0,0,0.6)", borderRadius:6, padding:"4px 8px",
+                }}>
+                  <span style={{ fontSize:14 }}>🔍 拡大</span>
+                </div>
               </button>
             )}
           </div>
@@ -213,8 +222,16 @@ export default function ReviewPage() {
               <div className="flex flex-col gap-2">
                 <button onClick={() => setLightbox(reworkPreview)}
                   className="relative w-full rounded-2xl overflow-hidden block"
-                  style={{ aspectRatio:"3/4" }}>
-                  <Image src={reworkPreview} alt="解き直し" fill className="object-cover" />
+                  style={{ aspectRatio:"3/4", background:"rgba(0,0,0,0.4)" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={reworkPreview} alt="解き直し"
+                    style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover" }} />
+                  <div style={{
+                    position:"absolute", bottom:8, right:8,
+                    background:"rgba(0,0,0,0.6)", borderRadius:6, padding:"4px 8px",
+                  }}>
+                    <span style={{ fontSize:14 }}>🔍 拡大</span>
+                  </div>
                 </button>
                 <button
                   onClick={() => { setReworkFile(null); setReworkPreview(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
