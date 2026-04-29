@@ -21,6 +21,7 @@ export default function ReviewPage() {
   const [reflection, setReflection] = useState("");
   const [saving, setSaving] = useState(false);
   const [profileId, setProfileId] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -96,6 +97,24 @@ export default function ReviewPage() {
   }
 
   return (
+    <>
+    {/* ライトボックス */}
+    {lightbox && (
+      <div
+        onClick={() => setLightbox(null)}
+        style={{
+          position:"fixed", inset:0, zIndex:9999,
+          background:"rgba(0,0,0,0.96)",
+          display:"flex", flexDirection:"column",
+          alignItems:"center", justifyContent:"center",
+          padding:16,
+        }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={lightbox} alt="拡大" style={{ maxWidth:"100%", maxHeight:"90vh", objectFit:"contain", borderRadius:12 }} />
+        <p className="text-muted text-sm mt-4">タップで閉じる</p>
+      </div>
+    )}
     <main className="min-h-screen px-4 py-8 max-w-sm mx-auto flex flex-col gap-4">
 
       <div className="flex items-center gap-3 mb-1">
@@ -174,11 +193,13 @@ export default function ReviewPage() {
       {view === "detail" && currentMistake && (
         <>
           <div className="card">
-            <p className="text-xs text-muted mb-2">元の問題（{formatDate(currentMistake.created_at)}）</p>
+            <p className="text-xs text-muted mb-2">元の問題（{formatDate(currentMistake.created_at)}）　<span className="text-xs" style={{ color:"var(--cyan)" }}>🔍 タップで拡大</span></p>
             {currentMistake.image_url && (
-              <div className="relative w-full rounded-2xl overflow-hidden" style={{ aspectRatio: "3/4" }}>
+              <button onClick={() => setLightbox(currentMistake.image_url)}
+                className="relative w-full rounded-2xl overflow-hidden block"
+                style={{ aspectRatio:"3/4" }}>
                 <Image src={currentMistake.image_url} alt="元の問題" fill className="object-cover" />
-              </div>
+              </button>
             )}
           </div>
 
@@ -190,9 +211,11 @@ export default function ReviewPage() {
             </div>
             {reworkPreview ? (
               <div className="flex flex-col gap-2">
-                <div className="relative w-full rounded-2xl overflow-hidden" style={{ aspectRatio: "3/4" }}>
+                <button onClick={() => setLightbox(reworkPreview)}
+                  className="relative w-full rounded-2xl overflow-hidden block"
+                  style={{ aspectRatio:"3/4" }}>
                   <Image src={reworkPreview} alt="解き直し" fill className="object-cover" />
-                </div>
+                </button>
                 <button
                   onClick={() => { setReworkFile(null); setReworkPreview(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
                   className="ghost-btn text-xs"
@@ -268,5 +291,6 @@ export default function ReviewPage() {
       )}
 
     </main>
+    </>
   );
 }
