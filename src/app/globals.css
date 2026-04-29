@@ -1,26 +1,221 @@
+@import url('https://fonts.googleapis.com/css2?family=DotGothic16&family=M+PLUS+Rounded+1c:wght@400;700;900&display=swap');
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg:       #08081e;
+  --card:     #0f0f2e;
+  --card2:    #141440;
+  --gold:     #fbbf24;
+  --gold-lt:  #fde68a;
+  --cyan:     #22d3ee;
+  --purple:   #a855f7;
+  --green:    #4ade80;
+  --red:      #f87171;
+  --orange:   #fb923c;
+  --text:     #e8e8f8;
+  --muted:    #6464a0;
+  --border:   rgba(255,255,255,0.08);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+* { box-sizing: border-box; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse 60% 40% at 20% -5%, rgba(168,85,247,0.18) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 85% 105%, rgba(34,211,238,0.12) 0%, transparent 55%);
+  background-attachment: fixed;
+  color: var(--text);
+  font-family: 'M PLUS Rounded 1c', 'DotGothic16', sans-serif;
+  min-height: 100vh;
+}
+
+/* ── カード ───────────────────────────────── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(34,211,238,0.35), rgba(168,85,247,0.2), transparent 60%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+.card-gold::before {
+  background: linear-gradient(135deg, rgba(251,191,36,0.6), rgba(251,146,60,0.3), transparent 60%);
+}
+.card-green::before {
+  background: linear-gradient(135deg, rgba(74,222,128,0.5), rgba(34,211,238,0.2), transparent 60%);
+}
+.card-red::before {
+  background: linear-gradient(135deg, rgba(248,113,113,0.5), rgba(251,146,60,0.2), transparent 60%);
+}
+
+/* ── ナビボタン（コマンド一覧用） ────────── */
+.nav-btn {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  text-align: left;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-decoration: none;
+}
+.nav-btn:hover { background: #1a1a50; border-color: rgba(34,211,238,0.3); }
+.nav-btn:active { transform: scale(0.98); }
+.nav-btn .nav-icon { font-size: 1.5rem; flex-shrink: 0; }
+.nav-btn .nav-arrow { margin-left: auto; color: var(--muted); font-size: 0.8rem; }
+
+/* ── アクションボタン（プライマリ） ───────── */
+.action-btn {
+  background: linear-gradient(135deg, #fbbf24, #f97316);
+  border: none;
+  border-radius: 14px;
+  color: #1c0a00;
+  font-family: 'DotGothic16', inherit;
+  font-weight: 900;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 16px 24px;
+  display: block;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(251,191,36,0.35);
+  transition: all 0.15s;
+}
+.action-btn:hover  { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(251,191,36,0.45); }
+.action-btn:active { transform: translateY(0); }
+.action-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* ── サブボタン ────────────────────────────── */
+.ghost-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 13px 20px;
+  display: block;
+  width: 100%;
+  text-align: center;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+.ghost-btn:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+
+/* ── XPバー ────────────────────────────────── */
+.xp-track {
+  background: rgba(0,0,0,0.4);
+  border-radius: 999px;
+  height: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.xp-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #22d3ee, #a855f7);
+  position: relative;
+  transition: width 0.9s cubic-bezier(.34,1.56,.64,1);
+}
+.xp-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.35) 50%, transparent 100%);
+  animation: shimmer 2.2s infinite;
+}
+@keyframes shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* ── ランクバッジ ────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-family: 'DotGothic16', monospace;
+  font-weight: 900;
+  padding: 3px 10px;
+  font-size: 0.8rem;
+}
+.badge-s { background: rgba(251,191,36,0.2); color: var(--gold); border: 1px solid rgba(251,191,36,0.5); }
+.badge-a { background: rgba(251,146,60,0.2); color: var(--orange); border: 1px solid rgba(251,146,60,0.5); }
+.badge-b { background: rgba(100,100,160,0.2); color: var(--muted); border: 1px solid rgba(100,100,160,0.3); }
+
+/* ── アニメーション ───────────────────────── */
+.pulse-gold {
+  animation: pulse-g 1s ease-in-out infinite alternate;
+}
+@keyframes pulse-g {
+  from { text-shadow: 0 0 4px rgba(251,191,36,0.6); }
+  to   { text-shadow: 0 0 16px rgba(251,191,36,1), 0 0 32px rgba(251,191,36,0.5); }
+}
+
+.flash { animation: fl 0.7s step-end infinite; }
+@keyframes fl { 50% { opacity: 0; } }
+
+.float {
+  animation: floating 3s ease-in-out infinite;
+}
+@keyframes floating {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-6px); }
+}
+
+/* ── テキストユーティリティ ───────────────── */
+.text-gold   { color: var(--gold); }
+.text-cyan   { color: var(--cyan); }
+.text-purple { color: var(--purple); }
+.text-green  { color: var(--green); }
+.text-muted  { color: var(--muted); }
+.font-dot    { font-family: 'DotGothic16', monospace; }
+
+/* ── フォームインプット ───────────────────── */
+.field {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.95rem;
+  padding: 12px 14px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.field:focus { border-color: rgba(34,211,238,0.5); }
+.field::placeholder { color: var(--muted); }
+
+/* ── 後方互換（徐々に削除予定） ──────────── */
+.dq-window {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
 }
