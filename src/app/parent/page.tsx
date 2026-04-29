@@ -19,7 +19,7 @@ export default function ParentPage() {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [processing, setProcessing] = useState<string | null>(null);
   const [showApproved, setShowApproved] = useState(false);
-  const [lightbox, setLightbox] = useState<string | null>(null);
+  // lightbox removed — images open in new tab for reliability
 
   function handleAuth() {
     if (pw === PARENT_PASSWORD) { setAuthState("authed"); loadMistakes(); }
@@ -68,59 +68,38 @@ export default function ParentPage() {
     return `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,"0")}`;
   }
 
-  /* ---- 画像サムネイル（タップで拡大／URL リンクも表示） ---- */
+  /* ---- 画像サムネイル（タップで別タブに拡大表示） ---- */
   function Thumb({ src, alt, ratio = "3/4" }: { src: string | null; alt: string; ratio?: string }) {
     if (!src) {
       return (
-        <div className="w-full rounded-xl flex items-center justify-center"
+        <div className="w-full rounded-xl flex flex-col items-center justify-center"
           style={{ aspectRatio: ratio, background: "rgba(239,68,68,0.1)", color: "var(--red)", fontSize: 11 }}>
-          URL未設定
+          <p>📷 画像なし</p>
         </div>
       );
     }
     return (
-      <div className="flex flex-col gap-1">
-        <button
-          onClick={() => setLightbox(src)}
-          className="relative w-full rounded-xl overflow-hidden"
-          style={{ aspectRatio: ratio, display: "block", background: "rgba(0,0,0,0.4)" }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={src}
-            alt={alt}
-            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-            onError={(e) => {
-              const target = e.currentTarget as HTMLImageElement;
-              target.style.display = "none";
-              const parent = target.parentElement;
-              if (parent && !parent.querySelector(".img-error")) {
-                const errDiv = document.createElement("div");
-                errDiv.className = "img-error";
-                errDiv.style.cssText = "position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#f87171;font-size:10px;text-align:center;padding:8px;";
-                errDiv.textContent = "❌ 画像が読めません";
-                parent.appendChild(errDiv);
-              }
-            }}
-          />
-          <div style={{
-            position: "absolute", bottom: 4, right: 4,
-            background: "rgba(0,0,0,0.6)", borderRadius: 6, padding: "2px 6px",
-          }}>
-            <span style={{ fontSize: 12 }}>🔍</span>
-          </div>
-        </button>
-        <a
-          href={src}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs text-center"
-          style={{ color: "var(--cyan)", fontSize: 10, textDecoration: "underline" }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          🔗 別タブで開く
-        </a>
-      </div>
+      <a
+        href={src}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="relative w-full rounded-xl overflow-hidden block"
+        style={{ aspectRatio: ratio, background: "rgba(0,0,0,0.4)" }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt={alt}
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+        />
+        <div style={{
+          position: "absolute", bottom: 4, right: 4,
+          background: "rgba(0,0,0,0.65)", borderRadius: 8, padding: "3px 8px",
+          color: "#fff", fontSize: 11,
+        }}>
+          🔍 タップで拡大
+        </div>
+      </a>
     );
   }
 
@@ -247,22 +226,22 @@ export default function ParentPage() {
         </div>
         <div className="flex gap-2">
           {m.image_url && (
-            <button onClick={() => setLightbox(m.image_url)}
-              className="relative shrink-0 rounded-xl overflow-hidden"
+            <a href={m.image_url} target="_blank" rel="noopener noreferrer"
+              className="relative shrink-0 rounded-xl overflow-hidden block"
               style={{ width:64, height:85, background:"rgba(0,0,0,0.4)" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={m.image_url} alt="問題"
                 style={{ width:"100%", height:"100%", objectFit:"cover" }} />
-            </button>
+            </a>
           )}
           {m.rework_image_url && (
-            <button onClick={() => setLightbox(m.rework_image_url!)}
-              className="relative shrink-0 rounded-xl overflow-hidden"
+            <a href={m.rework_image_url} target="_blank" rel="noopener noreferrer"
+              className="relative shrink-0 rounded-xl overflow-hidden block"
               style={{ width:64, height:85, background:"rgba(0,0,0,0.4)" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={m.rework_image_url} alt="解き直し"
                 style={{ width:"100%", height:"100%", objectFit:"cover" }} />
-            </button>
+            </a>
           )}
           <div className="flex-1 min-w-0 text-xs text-muted">
             {m.handwriting_score != null && <p>文字：{m.handwriting_score}点</p>}
@@ -301,29 +280,6 @@ export default function ParentPage() {
 
   /* =================== 管理画面 =================== */
   return (
-    <>
-      {/* ===== ライトボックス ===== */}
-      {lightbox && (
-        <div
-          onClick={() => setLightbox(null)}
-          style={{
-            position:"fixed", inset:0, zIndex:9999,
-            background:"rgba(0,0,0,0.96)",
-            display:"flex", flexDirection:"column",
-            alignItems:"center", justifyContent:"center",
-            padding:16,
-          }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={lightbox}
-            alt="拡大"
-            style={{ maxWidth:"100%", maxHeight:"90vh", objectFit:"contain", borderRadius:12 }}
-          />
-          <p className="text-muted text-sm mt-4">タップで閉じる</p>
-        </div>
-      )}
-
       <main className="min-h-screen px-4 py-8 max-w-sm mx-auto flex flex-col gap-5">
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-3">
@@ -385,6 +341,5 @@ export default function ParentPage() {
           </>
         )}
       </main>
-    </>
   );
 }

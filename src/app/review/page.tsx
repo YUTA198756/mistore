@@ -20,7 +20,6 @@ export default function ReviewPage() {
   const [reflection, setReflection] = useState("");
   const [saving, setSaving] = useState(false);
   const [profileId, setProfileId] = useState<string | null>(null);
-  const [lightbox, setLightbox] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -96,24 +95,6 @@ export default function ReviewPage() {
   }
 
   return (
-    <>
-    {/* ライトボックス */}
-    {lightbox && (
-      <div
-        onClick={() => setLightbox(null)}
-        style={{
-          position:"fixed", inset:0, zIndex:9999,
-          background:"rgba(0,0,0,0.96)",
-          display:"flex", flexDirection:"column",
-          alignItems:"center", justifyContent:"center",
-          padding:16,
-        }}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={lightbox} alt="拡大" style={{ maxWidth:"100%", maxHeight:"90vh", objectFit:"contain", borderRadius:12 }} />
-        <p className="text-muted text-sm mt-4">タップで閉じる</p>
-      </div>
-    )}
     <main className="min-h-screen px-4 py-8 max-w-sm mx-auto flex flex-col gap-4">
 
       <div className="flex items-center gap-3 mb-1">
@@ -194,9 +175,9 @@ export default function ReviewPage() {
       {view === "detail" && currentMistake && (
         <>
           <div className="card">
-            <p className="text-xs text-muted mb-2">元の問題（{formatDate(currentMistake.created_at)}）　<span className="text-xs" style={{ color:"var(--cyan)" }}>🔍 タップで拡大</span></p>
+            <p className="text-xs text-muted mb-2">元の問題（{formatDate(currentMistake.created_at)}）</p>
             {currentMistake.image_url && (
-              <button onClick={() => setLightbox(currentMistake.image_url)}
+              <a href={currentMistake.image_url} target="_blank" rel="noopener noreferrer"
                 className="relative w-full rounded-2xl overflow-hidden block"
                 style={{ aspectRatio:"3/4", background:"rgba(0,0,0,0.4)" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -204,11 +185,12 @@ export default function ReviewPage() {
                   style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover" }} />
                 <div style={{
                   position:"absolute", bottom:8, right:8,
-                  background:"rgba(0,0,0,0.6)", borderRadius:6, padding:"4px 8px",
+                  background:"rgba(0,0,0,0.65)", borderRadius:8, padding:"4px 10px",
+                  color:"#fff", fontSize:12,
                 }}>
-                  <span style={{ fontSize:14 }}>🔍 拡大</span>
+                  🔍 タップで拡大
                 </div>
-              </button>
+              </a>
             )}
           </div>
 
@@ -220,7 +202,7 @@ export default function ReviewPage() {
             </div>
             {reworkPreview ? (
               <div className="flex flex-col gap-2">
-                <button onClick={() => setLightbox(reworkPreview)}
+                <a href={reworkPreview} target="_blank" rel="noopener noreferrer"
                   className="relative w-full rounded-2xl overflow-hidden block"
                   style={{ aspectRatio:"3/4", background:"rgba(0,0,0,0.4)" }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -228,11 +210,12 @@ export default function ReviewPage() {
                     style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover" }} />
                   <div style={{
                     position:"absolute", bottom:8, right:8,
-                    background:"rgba(0,0,0,0.6)", borderRadius:6, padding:"4px 8px",
+                    background:"rgba(0,0,0,0.65)", borderRadius:8, padding:"4px 10px",
+                    color:"#fff", fontSize:12,
                   }}>
-                    <span style={{ fontSize:14 }}>🔍 拡大</span>
+                    🔍 タップで拡大
                   </div>
-                </button>
+                </a>
                 <button
                   onClick={() => { setReworkFile(null); setReworkPreview(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
                   className="ghost-btn text-xs"
@@ -308,6 +291,5 @@ export default function ReviewPage() {
       )}
 
     </main>
-    </>
   );
 }
