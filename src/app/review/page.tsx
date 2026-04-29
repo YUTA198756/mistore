@@ -3,18 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { supabase, Mistake } from "@/lib/supabase";
-import { getOrCreateChildProfile, addXp } from "@/lib/profile";
+import { getOrCreateChildProfile } from "@/lib/profile";
 import { compressImage } from "@/lib/imageCompress";
 
 const XP_RESOLVE = 10;
 const XP_REASON_BONUS = 20;
 
-type ViewState = "list" | "detail" | "reason" | "done";
-
-interface DoneState {
-  xpEarned: number;
-  ticketsEarned: number;
-}
+type ViewState = "list" | "detail" | "done";
 
 export default function ReviewPage() {
   const [mistakes, setMistakes] = useState<Mistake[]>([]);
@@ -25,7 +20,6 @@ export default function ReviewPage() {
   const [reworkPreview, setReworkPreview] = useState<string | null>(null);
   const [reflection, setReflection] = useState("");
   const [saving, setSaving] = useState(false);
-  const [doneState, setDoneState] = useState<DoneState | null>(null);
   const [profileId, setProfileId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -40,7 +34,10 @@ export default function ReviewPage() {
   async function fetchMistakes() {
     setLoading(true);
     const { data } = await supabase
-      .from("mistakes").select("*").eq("status", "unresolved")
+      .from("mistakes")
+      .select("*")
+      .eq("status", "unresolved")
+      .neq("approval_status", "deleted")
       .order("created_at", { ascending: false });
     setMistakes(data ?? []);
     setLoading(false);
@@ -50,6 +47,7 @@ export default function ReviewPage() {
     setCurrentMistake(m);
     setReworkFile(null);
     setReworkPreview(null);
+    setReflection("");
     setView("detail");
   }
 
@@ -60,7 +58,7 @@ export default function ReviewPage() {
     setReworkPreview(URL.createObjectURL(file));
   }
 
-  async function submitRework() {
+  async function submitAll() {
     if (!reworkFile || !currentMistake || !profileId) return;
     setSaving(true);
 
@@ -76,35 +74,18 @@ export default function ReviewPage() {
       ? supabase.storage.from("mistake-images").getPublicUrl(uploadData.path).data.publicUrl
       : "";
 
+    const hasReason = reflection.trim().length > 0;
+    const additionalXp = XP_RESOLVE + (hasReason ? XP_REASON_BONUS : 0);
+    const totalPending = (currentMistake.pending_xp ?? 0) + additionalXp;
+
     await supabase.from("mistakes").update({
       status: "resolved",
       rework_image_url: reworkUrl || null,
-      xp_earned: (currentMistake.xp_earned ?? 0) + XP_RESOLVE,
+      reflection_text: reflection.trim() || null,
+      pending_xp: totalPending,
     }).eq("id", currentMistake.id);
 
-    const r = await addXp(profileId, XP_RESOLVE);
-    setDoneState({ xpEarned: XP_RESOLVE, ticketsEarned: r.ticketsEarned });
     setMistakes((prev) => prev.filter((m) => m.id !== currentMistake.id));
-    setReflection("");
-    setSaving(false);
-    setView("reason");
-  }
-
-  async function submitReason() {
-    if (!currentMistake || !profileId) return;
-    if (!reflection.trim()) { setView("done"); return; }
-    setSaving(true);
-
-    await supabase.from("mistakes").update({
-      reflection_text: reflection.trim(),
-      xp_earned: (currentMistake.xp_earned ?? 0) + XP_RESOLVE + XP_REASON_BONUS,
-    }).eq("id", currentMistake.id);
-
-    const r = await addXp(profileId, XP_REASON_BONUS);
-    setDoneState((prev) => prev
-      ? { xpEarned: prev.xpEarned + XP_REASON_BONUS, ticketsEarned: prev.ticketsEarned + r.ticketsEarned }
-      : { xpEarned: XP_REASON_BONUS, ticketsEarned: r.ticketsEarned }
-    );
     setSaving(false);
     setView("done");
   }
@@ -121,16 +102,13 @@ export default function ReviewPage() {
         <button
           onClick={() => {
             if (view === "list") return;
-            if (view === "detail") { setView("list"); setCurrentMistake(null); }
-            if (view === "reason") setView("detail");
+            setView("list");
+            setCurrentMistake(null);
           }}
           className="ghost-btn"
           style={{ width: "auto", padding: "8px 14px" }}
         >
-          {view === "list"
-            ? <a href="/">← もどる</a>
-            : "← もどる"
-          }
+          {view === "list" ? <a href="/">← もどる</a> : "← 一覧"}
         </button>
         <h1 className="font-dot text-lg text-gold">🔄 とき直し</h1>
       </div>
@@ -192,28 +170,26 @@ export default function ReviewPage() {
         </>
       )}
 
-      {/* 詳細：解き直し写真を撮る */}
+      {/* 詳細：解き直し写真＋理由を一括送信 */}
       {view === "detail" && currentMistake && (
         <>
           <div className="card">
-            <p className="text-xs text-muted mb-2">{formatDate(currentMistake.created_at)} の問題</p>
+            <p className="text-xs text-muted mb-2">元の問題（{formatDate(currentMistake.created_at)}）</p>
             {currentMistake.image_url && (
-              <div className="relative w-full rounded-2xl overflow-hidden mb-2" style={{ aspectRatio: "3/4" }}>
+              <div className="relative w-full rounded-2xl overflow-hidden" style={{ aspectRatio: "3/4" }}>
                 <Image src={currentMistake.image_url} alt="元の問題" fill className="object-cover" />
               </div>
             )}
-            <p className="text-xs text-center text-muted">↑ 元の問題</p>
           </div>
 
+          {/* 解き直し写真 */}
           <div className="card">
-            <p className="font-bold text-sm mb-1">📸 解き直した答えを撮影しよう</p>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="badge badge-b text-xs">＋{XP_RESOLVE} XP</span>
-              <span className="text-xs text-muted">写真を撮ると獲得！</span>
+            <div className="flex items-center justify-between mb-3">
+              <p className="font-bold text-sm">📸 解き直した答えを撮影</p>
+              <span className="badge badge-b text-xs">必須</span>
             </div>
-
             {reworkPreview ? (
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-2">
                 <div className="relative w-full rounded-2xl overflow-hidden" style={{ aspectRatio: "3/4" }}>
                   <Image src={reworkPreview} alt="解き直し" fill className="object-cover" />
                 </div>
@@ -225,14 +201,10 @@ export default function ReviewPage() {
                 </button>
               </div>
             ) : (
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="action-btn"
-              >
+              <button onClick={() => fileInputRef.current?.click()} className="action-btn">
                 📷 カメラで撮影
               </button>
             )}
-
             <input
               ref={fileInputRef}
               type="file"
@@ -243,36 +215,12 @@ export default function ReviewPage() {
             />
           </div>
 
-          <button
-            onClick={submitRework}
-            disabled={!reworkFile || saving}
-            className="action-btn"
-            style={{ opacity: reworkFile ? 1 : 0.4 }}
-          >
-            {saving ? "保存中…" : `✅ 解き直し完了！（＋${XP_RESOLVE} XP）`}
-          </button>
-        </>
-      )}
-
-      {/* 理由入力 */}
-      {view === "reason" && (
-        <>
-          <div className="card card-green text-center py-6">
-            <div className="text-4xl mb-2">🎉</div>
-            <p className="font-dot text-lg font-bold text-green mb-1">解き直し完了！</p>
-            <p className="font-dot text-2xl font-bold text-gold">＋{XP_RESOLVE} XP</p>
-            {doneState && doneState.ticketsEarned > 0 && (
-              <p className="font-dot text-sm pulse-gold mt-2" style={{ color: "var(--purple)" }}>
-                🎰 ガチャチケット ×{doneState.ticketsEarned} 獲得！
-              </p>
-            )}
-          </div>
-
+          {/* 理由入力 */}
           <div className="card">
             <p className="font-bold text-sm mb-1">✏️ なぜ間違えた？</p>
             <div className="flex items-center gap-2 mb-3">
               <span className="badge badge-s text-xs">＋{XP_REASON_BONUS} XP ボーナス</span>
-              <span className="text-xs text-muted">書くと追加獲得！</span>
+              <span className="text-xs text-muted">書くと追加！（任意）</span>
             </div>
             <textarea
               value={reflection}
@@ -283,28 +231,35 @@ export default function ReviewPage() {
             />
           </div>
 
-          <button onClick={submitReason} disabled={saving} className="action-btn">
-            {saving ? "保存中…" : reflection.trim()
-              ? `📢 ＋${XP_REASON_BONUS} XP もらう！`
-              : "スキップしてホームへ"}
+          {/* XP予告 */}
+          <div className="card text-center py-3" style={{ borderColor: "rgba(251,191,36,0.3)", background: "rgba(251,191,36,0.05)" }}>
+            <p className="text-xs text-muted mb-1">送信後・承認でもらえるXP（合計）</p>
+            <p className="font-dot text-2xl font-bold text-gold">
+              ＋{(currentMistake.pending_xp ?? 0) + XP_RESOLVE + (reflection.trim() ? XP_REASON_BONUS : 0)} XP
+            </p>
+          </div>
+
+          <button
+            onClick={submitAll}
+            disabled={!reworkFile || saving}
+            className="action-btn"
+            style={{ opacity: reworkFile ? 1 : 0.4 }}
+          >
+            {saving ? "送信中…" : "📢 パパ・ママに送る（承認を求める）"}
           </button>
         </>
       )}
 
-      {/* 完了 */}
-      {view === "done" && doneState && (
+      {/* 承認待ち完了 */}
+      {view === "done" && (
         <div className="card card-gold text-center py-10">
-          <div className="text-5xl mb-4 float">🏆</div>
-          <p className="font-dot text-xl font-bold text-gold mb-2">ぜんぶ完了！</p>
-          <p className="text-4xl font-dot font-bold text-gold mb-2">＋{doneState.xpEarned} XP</p>
-          {doneState.ticketsEarned > 0 && (
-            <p className="font-dot text-base pulse-gold mb-4" style={{ color: "var(--purple)" }}>
-              🎰 ガチャチケット ×{doneState.ticketsEarned} 獲得！
-            </p>
-          )}
-          <p className="text-sm text-muted mb-6">まちがいを宝に変えた！<br />経験値が上がったぞ！</p>
+          <div className="text-5xl mb-4 float">📮</div>
+          <p className="font-dot text-xl font-bold text-gold mb-2">送信完了！</p>
+          <p className="text-sm text-muted mb-6">
+            パパ・ママが承認したら<br />XPとチケットがもらえるよ！
+          </p>
           <div className="flex flex-col gap-3">
-            <button onClick={() => { setView("list"); setCurrentMistake(null); setDoneState(null); }} className="action-btn">
+            <button onClick={() => { setView("list"); setCurrentMistake(null); }} className="action-btn">
               次の問題へ
             </button>
             <a href="/" className="ghost-btn">🏠 ホームにもどる</a>

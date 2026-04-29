@@ -59,6 +59,13 @@ export default function Home() {
         </Link>
       </div>
 
+      {/* おや管理リンク */}
+      <div className="text-center">
+        <Link href="/parent" className="text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>
+          👨‍👩‍👧 保護者ページ
+        </Link>
+      </div>
+
       {/* XPシステム説明 */}
       <div className="card">
         <p className="text-xs text-cyan mb-3 font-dot">💎 けいけんちシステム</p>

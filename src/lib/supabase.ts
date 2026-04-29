@@ -21,5 +21,7 @@ export interface Mistake {
   reflection_text: string | null;
   rework_image_url: string | null;
   xp_earned: number;
+  pending_xp: number;
+  approval_status: "pending" | "approved" | "deleted";
   created_at: string;
 }
