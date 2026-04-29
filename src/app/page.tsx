@@ -9,7 +9,8 @@ export default function Home() {
       {/* ヒーローヘッダー */}
       <div className="card card-gold text-center py-8">
         <div className="float text-5xl mb-3">🗺️</div>
-        <h1 className="font-dot text-3xl text-gold mb-1">ミス・トレ</h1>
+        <h1 className="font-dot text-3xl text-gold mb-1">Mys-Tre</h1>
+        <p className="text-base text-muted mb-1">ミス・トレ</p>
         <p className="text-sm text-muted">まちがいをお宝に変えよう！</p>
       </div>
 
