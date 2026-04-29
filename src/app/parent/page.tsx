@@ -68,39 +68,59 @@ export default function ParentPage() {
     return `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,"0")}`;
   }
 
-  /* ---- 画像サムネイル（タップで拡大） ---- */
-  function Thumb({ src, alt, ratio = "3/4" }: { src: string; alt: string; ratio?: string }) {
-    return (
-      <button
-        onClick={() => setLightbox(src)}
-        className="relative w-full rounded-xl overflow-hidden"
-        style={{ aspectRatio: ratio, display: "block", background: "rgba(0,0,0,0.4)" }}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={src}
-          alt={alt}
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-          onError={(e) => {
-            const target = e.currentTarget as HTMLImageElement;
-            target.style.display = "none";
-            const parent = target.parentElement;
-            if (parent && !parent.querySelector(".img-error")) {
-              const errDiv = document.createElement("div");
-              errDiv.className = "img-error";
-              errDiv.style.cssText = "position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#f87171;font-size:11px;text-align:center;padding:8px;";
-              errDiv.textContent = "画像読み込みエラー";
-              parent.appendChild(errDiv);
-            }
-          }}
-        />
-        <div style={{
-          position: "absolute", bottom: 4, right: 4,
-          background: "rgba(0,0,0,0.6)", borderRadius: 6, padding: "2px 6px",
-        }}>
-          <span style={{ fontSize: 12 }}>🔍</span>
+  /* ---- 画像サムネイル（タップで拡大／URL リンクも表示） ---- */
+  function Thumb({ src, alt, ratio = "3/4" }: { src: string | null; alt: string; ratio?: string }) {
+    if (!src) {
+      return (
+        <div className="w-full rounded-xl flex items-center justify-center"
+          style={{ aspectRatio: ratio, background: "rgba(239,68,68,0.1)", color: "var(--red)", fontSize: 11 }}>
+          URL未設定
         </div>
-      </button>
+      );
+    }
+    return (
+      <div className="flex flex-col gap-1">
+        <button
+          onClick={() => setLightbox(src)}
+          className="relative w-full rounded-xl overflow-hidden"
+          style={{ aspectRatio: ratio, display: "block", background: "rgba(0,0,0,0.4)" }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={src}
+            alt={alt}
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+            onError={(e) => {
+              const target = e.currentTarget as HTMLImageElement;
+              target.style.display = "none";
+              const parent = target.parentElement;
+              if (parent && !parent.querySelector(".img-error")) {
+                const errDiv = document.createElement("div");
+                errDiv.className = "img-error";
+                errDiv.style.cssText = "position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#f87171;font-size:10px;text-align:center;padding:8px;";
+                errDiv.textContent = "❌ 画像が読めません";
+                parent.appendChild(errDiv);
+              }
+            }}
+          />
+          <div style={{
+            position: "absolute", bottom: 4, right: 4,
+            background: "rgba(0,0,0,0.6)", borderRadius: 6, padding: "2px 6px",
+          }}>
+            <span style={{ fontSize: 12 }}>🔍</span>
+          </div>
+        </button>
+        <a
+          href={src}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-center"
+          style={{ color: "var(--cyan)", fontSize: 10, textDecoration: "underline" }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          🔗 別タブで開く
+        </a>
+      </div>
     );
   }
 
@@ -139,17 +159,11 @@ export default function ParentPage() {
         <div className="flex gap-2">
           <div className="flex flex-col gap-1 flex-1">
             <p className="text-xs text-muted text-center">元の問題</p>
-            {m.image_url
-              ? <Thumb src={m.image_url} alt="元の問題" />
-              : <div className="w-full rounded-xl flex items-center justify-center text-2xl"
-                  style={{ aspectRatio:"3/4", background:"rgba(0,0,0,0.3)" }}>📄</div>}
+            <Thumb src={m.image_url} alt="元の問題" />
           </div>
           <div className="flex flex-col gap-1 flex-1">
             <p className="text-xs text-muted text-center">解き直し</p>
-            {m.rework_image_url
-              ? <Thumb src={m.rework_image_url} alt="解き直し" />
-              : <div className="w-full rounded-xl flex items-center justify-center text-2xl"
-                  style={{ aspectRatio:"3/4", background:"rgba(0,0,0,0.3)" }}>❓</div>}
+            <Thumb src={m.rework_image_url} alt="解き直し" />
           </div>
         </div>
 
