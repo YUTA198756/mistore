@@ -37,12 +37,23 @@ export default function ShopPage() {
       return;
     }
 
-    await supabase.from("tickets").insert({
+    const { error } = await supabase.from("tickets").insert({
       user_id: profileId,
       ticket_name: itemName,
       gold_cost: cost,
       status: "unused",
     });
+
+    if (error) {
+      // チケット登録に失敗したのでゴールドを返還する
+      await supabase
+        .from("profiles")
+        .update({ current_gold: (gold ?? 0) })
+        .eq("id", profileId);
+      setMessage({ text: "チケットの登録に失敗したよ。もう一度試してね", ok: false });
+      setBuying(null);
+      return;
+    }
 
     const newGold = await getTotalGold(profileId);
     setGold(newGold);

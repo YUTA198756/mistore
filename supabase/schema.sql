@@ -9,6 +9,8 @@ create table if not exists profiles (
   display_name text not null,
   role text not null check (role in ('child', 'parent')),
   current_xp integer default 0,
+  current_gold integer default 0,
+  gacha_tickets integer default 0,
   created_at timestamptz default now()
 );
 
@@ -31,6 +33,17 @@ create table if not exists gacha_status (
   last_pulled_date date,
   is_super_gacha boolean default false,
   consecutive_losses integer default 0
+);
+
+-- ゴールドショップチケット
+create table if not exists tickets (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles(id) on delete cascade,
+  ticket_name text not null,
+  gold_cost integer not null,
+  status text default 'unused' check (status in ('unused', 'used')),
+  created_at timestamptz default now(),
+  used_at timestamptz
 );
 
 -- 報酬申請
