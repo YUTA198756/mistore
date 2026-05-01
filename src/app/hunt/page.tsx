@@ -12,7 +12,7 @@ import { setSuperGacha } from "@/lib/gacha";
 type Step = "capture" | "preview" | "scoring" | "result" | "error";
 
 const XP_BASE = 10;
-const SUPER_GACHA_THRESHOLD = 90;
+const SUPER_GACHA_THRESHOLD = 80;
 
 export default function HuntPage() {
   const [step, setStep] = useState<Step>("capture");
@@ -101,12 +101,12 @@ export default function HuntPage() {
   };
 
   const scoreColor = scoreResult
-    ? scoreResult.score >= 90 ? "var(--gold)"
+    ? scoreResult.score >= SUPER_GACHA_THRESHOLD ? "var(--gold)"
     : scoreResult.score >= 70 ? "var(--green)" : "var(--cyan)"
     : "var(--cyan)";
 
   const rankLabel = scoreResult
-    ? scoreResult.score >= 90 ? "✨ スーパー神筆！"
+    ? scoreResult.score >= SUPER_GACHA_THRESHOLD ? "✨ スーパー神筆！"
     : scoreResult.score >= 70 ? "👍 じょうず！" : "💪 ふつう"
     : "";
 
@@ -168,7 +168,7 @@ export default function HuntPage() {
             <div className="xp-track mb-2" style={{ height: 16 }}>
               <div className="xp-fill" style={{
                 width: `${scoreResult.score}%`,
-                background: scoreResult.score >= 90
+                background: scoreResult.score >= SUPER_GACHA_THRESHOLD
                   ? "linear-gradient(90deg, #fbbf24, #f97316)"
                   : scoreResult.score >= 70
                   ? "linear-gradient(90deg, #4ade80, #22d3ee)"
@@ -177,7 +177,7 @@ export default function HuntPage() {
             </div>
             <div className="flex justify-between items-center mb-4">
               <span className="text-sm font-bold" style={{ color: scoreColor }}>{rankLabel}</span>
-              {scoreResult.score >= 90 && <span className="badge badge-s">神筆</span>}
+              {scoreResult.score >= SUPER_GACHA_THRESHOLD && <span className="badge badge-s">神筆</span>}
             </div>
             <div className="p-3 rounded-2xl" style={{ background: "rgba(0,0,0,0.25)" }}>
               <p className="text-xs text-muted mb-1">🐾 ポンちゃんより</p>
