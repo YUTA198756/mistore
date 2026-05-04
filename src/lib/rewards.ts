@@ -29,9 +29,7 @@ export const REWARDS: Reward[] = [
 // --- 排出確率（合計が100になるように設定）---
 export const WEIGHTS = {
   // 通常ガチャ
-  normal: { S: 3, A: 27, B: 70 },
-  // スーパーガチャ（神筆ボーナス獲得日）
-  super:  { S: 10, A: 45, B: 45 },
+  normal: { S: 10, A: 45, B: 45 },
   // 天井（B級が3回続いた翌日）
   ceiling: { S: 10, A: 90, B: 0 },
 };

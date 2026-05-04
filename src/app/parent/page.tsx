@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { supabase, Mistake } from "@/lib/supabase";
-import { addXp } from "@/lib/profile";
+import { addXp, addGold } from "@/lib/profile";
 
 const PARENT_PASSWORD = "1115";
 
@@ -25,6 +25,11 @@ export default function ParentPage() {
   const [manualXp, setManualXp] = useState("");
   const [manualSaving, setManualSaving] = useState(false);
   const [manualMsg, setManualMsg] = useState<{ text: string; ok: boolean } | null>(null);
+
+  // 手動ゴールド入力
+  const [manualGold, setManualGold] = useState("");
+  const [goldSaving, setGoldSaving] = useState(false);
+  const [goldMsg, setGoldMsg] = useState<{ text: string; ok: boolean } | null>(null);
 
   function handleAuth() {
     if (pw === PARENT_PASSWORD) {
@@ -51,6 +56,17 @@ export default function ParentPage() {
     setManualMsg({ text: `＋${amount} XP を追加しました！`, ok: true });
     setManualXp("");
     setManualSaving(false);
+  }
+
+  async function handleManualGold() {
+    const amount = parseInt(manualGold, 10);
+    if (!amount || amount <= 0 || !childProfileId) return;
+    setGoldSaving(true);
+    setGoldMsg(null);
+    await addGold(childProfileId, amount);
+    setGoldMsg({ text: `＋${amount} ゴールドを追加しました！`, ok: true });
+    setManualGold("");
+    setGoldSaving(false);
   }
 
   async function loadMistakes() {
@@ -359,6 +375,46 @@ export default function ParentPage() {
             style={{ opacity: manualXp && parseInt(manualXp) > 0 ? 1 : 0.4 }}
           >
             {manualSaving ? "追加中…" : "⭕ XPを追加する"}
+          </button>
+        </section>
+
+        {/* ===== ゴールド手入力 ===== */}
+        <section className="card flex flex-col gap-3" style={{ borderColor: "rgba(251,191,36,0.3)" }}>
+          <div className="flex items-center gap-2">
+            <span className="text-xl">💰</span>
+            <h2 className="font-dot text-base text-gold">ゴールド 手入力</h2>
+          </div>
+          <p className="text-xs text-muted">追加したいゴールドの枚数を入力してください。</p>
+
+          <div className="flex gap-2 items-center">
+            <input
+              type="number"
+              min={1}
+              max={9999}
+              value={manualGold}
+              onChange={(e) => { setManualGold(e.target.value); setGoldMsg(null); }}
+              placeholder="ゴールド数"
+              className="field text-center text-xl font-bold"
+              style={{ flex: 1 }}
+            />
+            <span className="font-dot font-bold text-lg shrink-0 text-gold" style={{ minWidth: 80 }}>
+              {manualGold && parseInt(manualGold) > 0 ? `＋${manualGold} G` : "--- G"}
+            </span>
+          </div>
+
+          {goldMsg && (
+            <p className="text-sm font-bold" style={{ color: goldMsg.ok ? "var(--gold)" : "var(--red)" }}>
+              {goldMsg.ok ? "✅ " : "⚠️ "}{goldMsg.text}
+            </p>
+          )}
+
+          <button
+            onClick={handleManualGold}
+            disabled={goldSaving || !manualGold || parseInt(manualGold) <= 0}
+            className="action-btn"
+            style={{ opacity: manualGold && parseInt(manualGold) > 0 ? 1 : 0.4, background: "rgba(251,191,36,0.15)", borderColor: "rgba(251,191,36,0.5)", color: "var(--gold)" }}
+          >
+            {goldSaving ? "追加中…" : "💰 ゴールドを追加する"}
           </button>
         </section>
 

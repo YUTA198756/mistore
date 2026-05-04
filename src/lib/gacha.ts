@@ -5,15 +5,14 @@ const STORAGE_KEY = "mistore_gacha";
 interface GachaState {
   lastPulledDate: string | null;
   consecutiveB: number;
-  isSuperGacha: boolean;
 }
 
 function loadState(): GachaState {
-  if (typeof window === "undefined") return { lastPulledDate: null, consecutiveB: 0, isSuperGacha: false };
+  if (typeof window === "undefined") return { lastPulledDate: null, consecutiveB: 0 };
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
   } catch {
-    return { lastPulledDate: null, consecutiveB: 0, isSuperGacha: false };
+    return { lastPulledDate: null, consecutiveB: 0 };
   }
 }
 
@@ -40,19 +39,14 @@ function pickReward(rank: Rank): Reward {
 
 export interface GachaResult {
   reward: Reward;
-  isSuper: boolean;
   isCeiling: boolean;
 }
 
-export function pullGacha(isSuperGacha: boolean): GachaResult {
+export function pullGacha(): GachaResult {
   const state = loadState();
   const isCeiling = (state.consecutiveB ?? 0) >= CEILING_COUNT;
 
-  const weights = isCeiling
-    ? WEIGHTS.ceiling
-    : isSuperGacha
-    ? WEIGHTS.super
-    : WEIGHTS.normal;
+  const weights = isCeiling ? WEIGHTS.ceiling : WEIGHTS.normal;
 
   const rank = pickRank(weights);
   const reward = pickReward(rank);
@@ -60,20 +54,14 @@ export function pullGacha(isSuperGacha: boolean): GachaResult {
   saveState({
     lastPulledDate: today(),
     consecutiveB: rank === "B" ? (state.consecutiveB ?? 0) + 1 : 0,
-    isSuperGacha: false,
   });
 
-  return { reward, isSuper: isSuperGacha, isCeiling };
+  return { reward, isCeiling };
 }
 
 export function canPullToday(): boolean {
   const state = loadState();
   return state.lastPulledDate !== today();
-}
-
-export function setSuperGacha(value: boolean) {
-  const state = loadState();
-  saveState({ ...state, isSuperGacha: value });
 }
 
 export function getGachaState() {

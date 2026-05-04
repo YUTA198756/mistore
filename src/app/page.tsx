@@ -93,8 +93,8 @@ export default function Home() {
             <span className="text-cyan font-bold">＋20 XP ボーナス</span>
           </div>
           <div className="flex justify-between">
-            <span>✨ スーパー神筆（80点↑）</span>
-            <span className="text-gold font-bold">XP 2倍！</span>
+            <span>✨ 神筆（80点↑）</span>
+            <span className="text-gold font-bold">全XP 2倍！</span>
           </div>
         </div>
         <div className="mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>

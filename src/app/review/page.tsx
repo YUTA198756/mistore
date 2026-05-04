@@ -82,8 +82,8 @@ export default function ReviewPage() {
       .getPublicUrl(uploadData.path).data.publicUrl;
 
     const hasReason = reflection.trim().length > 0;
-    const additionalXp = XP_RESOLVE + (hasReason ? XP_REASON_BONUS : 0);
-    const totalPending = (currentMistake.pending_xp ?? 0) + additionalXp;
+    const multiplier = currentMistake.is_super_gacha ? 2 : 1;
+    const totalPending = ((currentMistake.pending_xp ?? 0) + XP_RESOLVE + (hasReason ? XP_REASON_BONUS : 0)) * multiplier;
 
     await supabase.from("mistakes").update({
       status: "resolved",
@@ -264,9 +264,12 @@ export default function ReviewPage() {
 
           {/* XP予告 */}
           <div className="card text-center py-3" style={{ borderColor: "rgba(251,191,36,0.3)", background: "rgba(251,191,36,0.05)" }}>
+            {currentMistake.is_super_gacha && (
+              <p className="text-xs font-bold text-gold mb-1">✨ 神筆ボーナス：全体2倍！</p>
+            )}
             <p className="text-xs text-muted mb-1">送信後・承認でもらえるXP（合計）</p>
             <p className="font-dot text-2xl font-bold text-gold">
-              ＋{(currentMistake.pending_xp ?? 0) + XP_RESOLVE + (reflection.trim() ? XP_REASON_BONUS : 0)} XP
+              ＋{(((currentMistake.pending_xp ?? 0) + XP_RESOLVE + (reflection.trim() ? XP_REASON_BONUS : 0)) * (currentMistake.is_super_gacha ? 2 : 1))} XP
             </p>
           </div>
 

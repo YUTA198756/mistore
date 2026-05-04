@@ -18,7 +18,6 @@ export default function GachaPage() {
   const [step, setStep] = useState<Step>("loading");
   const [result, setResult] = useState<GachaResult | null>(null);
   const [dots, setDots] = useState("");
-  const [isSuperGacha, setIsSuperGacha] = useState(false);
   const [consecutiveB, setConsecutiveB] = useState(0);
   const [tickets, setTickets] = useState(0);
   const [profileId, setProfileId] = useState<string | null>(null);
@@ -31,7 +30,6 @@ export default function GachaPage() {
       const t = await getGachaTickets(id);
       setTickets(t);
       const state = getGachaState();
-      setIsSuperGacha(state.isSuperGacha ?? false);
       setConsecutiveB(state.consecutiveB ?? 0);
       setStep(t > 0 ? "ready" : "noticket");
     })();
@@ -49,7 +47,7 @@ export default function GachaPage() {
     if (!ok) { setStep("noticket"); return; }
     setStep("pulling");
     setTimeout(() => {
-      setResult(pullGacha(isSuperGacha));
+      setResult(pullGacha());
       setStep("rank");
     }, 2200);
   };
@@ -85,12 +83,6 @@ export default function GachaPage() {
 
       {step === "ready" && (
         <div className="card text-center py-8">
-          {isSuperGacha && (
-            <div className="mb-4 p-3 rounded-2xl" style={{ background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.3)" }}>
-              <p className="font-dot text-sm pulse-gold text-gold">✨ スーパー神筆ボーナス発動中！</p>
-              <p className="text-xs mt-1" style={{ color: "var(--gold-lt)" }}>Sランク確率アップ！</p>
-            </div>
-          )}
           {consecutiveB >= CEILING_COUNT && (
             <div className="mb-4 p-3 rounded-2xl" style={{ background: "rgba(34,211,238,0.08)", border: "1px solid rgba(34,211,238,0.3)" }}>
               <p className="text-sm text-cyan font-bold">🌟 天井発動！Aランク以上確定！</p>
@@ -116,7 +108,7 @@ export default function GachaPage() {
       {step === "rank" && result && rs && (
         <div className="card text-center py-12">
           <p className="text-sm text-muted mb-4">
-            結果は{result.isCeiling ? "（天井）" : result.isSuper ? "（スーパー）" : ""}…！
+            結果は{result.isCeiling ? "（天井）" : ""}…！
           </p>
           <div className="text-6xl mb-4 float">{rs.icon}</div>
           <p className="font-dot text-3xl font-bold mb-2 flash" style={{

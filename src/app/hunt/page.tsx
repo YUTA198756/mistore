@@ -7,7 +7,6 @@ import { compressImage, fileToBase64 } from "@/lib/imageCompress";
 import { scoreHandwriting, GeminiScoreResult } from "@/lib/gemini";
 import { supabase } from "@/lib/supabase";
 import { getOrCreateChildProfile } from "@/lib/profile";
-import { setSuperGacha } from "@/lib/gacha";
 
 type Step = "capture" | "preview" | "scoring" | "result" | "error";
 
@@ -44,7 +43,7 @@ export default function HuntPage() {
       }
 
       const isSuperGacha = result.score >= SUPER_GACHA_THRESHOLD;
-      const xp = isSuperGacha ? XP_BASE * 2 : XP_BASE;
+      const xp = XP_BASE; // 神筆2倍は解き直し完了時に合計へ適用
 
       const profileId = await getOrCreateChildProfile();
 
@@ -78,7 +77,6 @@ export default function HuntPage() {
         approval_status: "pending",
       });
 
-      if (isSuperGacha) setSuperGacha(true);
 
       setScoreResult(result);
       setPendingXp(xp);
@@ -150,9 +148,9 @@ export default function HuntPage() {
           {scoreResult.score >= SUPER_GACHA_THRESHOLD && (
             <div className="card card-gold text-center py-5">
               <p className="text-2xl mb-2 float">✨</p>
-              <p className="font-dot text-lg pulse-gold text-gold">スーパー神筆ボーナス！</p>
+              <p className="font-dot text-lg pulse-gold text-gold">神筆ボーナス！</p>
               <p className="text-sm mt-1" style={{ color: "var(--gold-lt)" }}>
-                XP 2倍 ＆ スーパーガチャ権利獲得！
+                解き直し完了で全XP 2倍！最大 ＋80 XP
               </p>
             </div>
           )}
@@ -187,8 +185,22 @@ export default function HuntPage() {
 
           <div className="card text-center py-5" style={{ borderColor: "rgba(251,191,36,0.4)", background: "rgba(251,191,36,0.06)" }}>
             <p className="text-xs text-muted mb-1">承認後に獲得予定</p>
-            <p className="font-dot text-3xl font-bold text-gold">＋{pendingXp} XP</p>
-            <p className="text-xs mt-2" style={{ color: "var(--gold-lt)" }}>
+            {scoreResult.score >= SUPER_GACHA_THRESHOLD ? (
+              <>
+                <p className="font-dot text-3xl font-bold text-gold">最大 ＋80 XP</p>
+                <p className="text-xs mt-2" style={{ color: "var(--gold-lt)" }}>
+                  （ハント10 ＋ 解き直し10 ＋ 理由20）× 2倍
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="font-dot text-3xl font-bold text-gold">最大 ＋40 XP</p>
+                <p className="text-xs mt-2" style={{ color: "var(--gold-lt)" }}>
+                  ハント10 ＋ 解き直し10 ＋ 理由20
+                </p>
+              </>
+            )}
+            <p className="text-xs mt-2" style={{ color: "rgba(255,255,255,0.4)" }}>
               次は解き直しをしてパパ・ママに承認してもらおう！
             </p>
           </div>

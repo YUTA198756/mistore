@@ -2,18 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { getOrCreateChildProfile, getGachaTickets } from "@/lib/profile";
-import { getGachaState } from "@/lib/gacha";
 
 export default function GachaButton() {
   const [tickets, setTickets] = useState<number | null>(null);
-  const [isSuper, setIsSuper] = useState(false);
 
   useEffect(() => {
     (async () => {
       const id = await getOrCreateChildProfile();
       if (!id) { setTickets(0); return; }
       setTickets(await getGachaTickets(id));
-      setIsSuper(getGachaState().isSuperGacha ?? false);
     })();
   }, []);
 
@@ -39,15 +36,10 @@ export default function GachaButton() {
   }
 
   return (
-    <a href="/gacha" className="nav-btn" style={{
-      borderColor: isSuper ? "rgba(251,191,36,0.6)" : "rgba(168,85,247,0.4)",
-      background: isSuper ? "rgba(251,191,36,0.08)" : "rgba(168,85,247,0.06)",
-    }}>
-      <span className="nav-icon">{isSuper ? "✨" : "🎰"}</span>
+    <a href="/gacha" className="nav-btn" style={{ borderColor: "rgba(168,85,247,0.4)", background: "rgba(168,85,247,0.06)" }}>
+      <span className="nav-icon">🎰</span>
       <div>
-        <div style={{ color: isSuper ? "var(--gold)" : "var(--purple)" }}>
-          {isSuper ? "スーパーガチャをひく！" : "ごほうびガチャをひく"}
-        </div>
+        <div style={{ color: "var(--purple)" }}>ごほうびガチャをひく</div>
         <div className="text-xs text-muted font-normal">チケット ×{tickets}枚</div>
       </div>
       <span className="nav-arrow">›</span>
