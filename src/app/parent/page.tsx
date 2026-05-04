@@ -19,11 +19,38 @@ export default function ParentPage() {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [processing, setProcessing] = useState<string | null>(null);
   const [showApproved, setShowApproved] = useState(false);
-  // lightbox removed — images open in new tab for reliability
+
+  // 手動XP入力
+  const [childProfileId, setChildProfileId] = useState<string | null>(null);
+  const [manualXp, setManualXp] = useState("");
+  const [manualSaving, setManualSaving] = useState(false);
+  const [manualMsg, setManualMsg] = useState<{ text: string; ok: boolean } | null>(null);
 
   function handleAuth() {
-    if (pw === PARENT_PASSWORD) { setAuthState("authed"); loadMistakes(); }
-    else setPwError(true);
+    if (pw === PARENT_PASSWORD) {
+      setAuthState("authed");
+      loadMistakes();
+      loadChildProfile();
+    } else {
+      setPwError(true);
+    }
+  }
+
+  async function loadChildProfile() {
+    const { data } = await supabase
+      .from("profiles").select("id").eq("role", "child").limit(1).single();
+    if (data?.id) setChildProfileId(data.id);
+  }
+
+  async function handleManualXp() {
+    const amount = parseInt(manualXp, 10);
+    if (!amount || amount <= 0 || !childProfileId) return;
+    setManualSaving(true);
+    setManualMsg(null);
+    await addXp(childProfileId, amount);
+    setManualMsg({ text: `＋${amount} XP を追加しました！`, ok: true });
+    setManualXp("");
+    setManualSaving(false);
   }
 
   async function loadMistakes() {
@@ -293,6 +320,47 @@ export default function ParentPage() {
         </div>
 
         {loading && <div className="card text-center py-10"><p className="text-muted">よみこみ中…</p></div>}
+
+        {/* ===== 正解XP手入力 ===== */}
+        <section className="card flex flex-col gap-3" style={{ borderColor: "rgba(74,222,128,0.3)" }}>
+          <div className="flex items-center gap-2">
+            <span className="text-xl">⭕</span>
+            <h2 className="font-dot text-base" style={{ color: "var(--green)" }}>正解XP 手入力</h2>
+          </div>
+          <p className="text-xs text-muted">テストや問題集で正解した数だけ入力してください。<br />丸1個 ＝ 1 XP</p>
+
+          <div className="flex gap-2 items-center">
+            <input
+              type="number"
+              min={1}
+              max={999}
+              value={manualXp}
+              onChange={(e) => { setManualXp(e.target.value); setManualMsg(null); }}
+              placeholder="正解した数"
+              className="field text-center text-xl font-bold"
+              style={{ flex: 1 }}
+            />
+            <span className="text-sm text-muted shrink-0">問 ＝</span>
+            <span className="font-dot font-bold text-lg shrink-0" style={{ color: "var(--green)", minWidth: 60 }}>
+              {manualXp && parseInt(manualXp) > 0 ? `＋${manualXp} XP` : "--- XP"}
+            </span>
+          </div>
+
+          {manualMsg && (
+            <p className="text-sm font-bold" style={{ color: manualMsg.ok ? "var(--green)" : "var(--red)" }}>
+              {manualMsg.ok ? "✅ " : "⚠️ "}{manualMsg.text}
+            </p>
+          )}
+
+          <button
+            onClick={handleManualXp}
+            disabled={manualSaving || !manualXp || parseInt(manualXp) <= 0}
+            className="action-btn"
+            style={{ opacity: manualXp && parseInt(manualXp) > 0 ? 1 : 0.4 }}
+          >
+            {manualSaving ? "追加中…" : "⭕ XPを追加する"}
+          </button>
+        </section>
 
         {!loading && (
           <>

@@ -76,6 +76,11 @@ export default function Home() {
         <p className="text-xs text-cyan mb-3 font-dot">💎 けいけんちシステム</p>
         <div className="flex flex-col gap-2 text-sm">
           <div className="flex justify-between">
+            <span>⭕ 正解（丸）1問</span>
+            <span className="font-bold" style={{ color: "var(--green)" }}>＋1 XP</span>
+          </div>
+          <p className="text-xs text-muted -mt-1">※ パパ・ママが保護者ページで入力</p>
+          <div className="flex justify-between mt-1">
             <span>📸 まちがい撮影</span>
             <span className="text-cyan font-bold">＋10 XP</span>
           </div>
